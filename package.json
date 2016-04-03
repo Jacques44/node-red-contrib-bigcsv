@@ -1,0 +1,26 @@
+{
+  "name": "node-red-contrib-bigcsv",
+  "version": "0.0.1",
+  "description": "A Big CSV parser",
+  "dependencies": {
+    "csv": "^0.4.6"
+  },
+  "keywords": [
+    "node-red"
+  ],
+  "node-red": {
+    "nodes": {
+      "bigcsv": "bigcsv/bigcsv.js"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Jacques44/node-red-contrib-bigcsv"
+  },
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/Jacques44/node-red-contrib-bigcsv/issues"
+  },
+  "homepage": "https://github.com/Jacques44/node-red-contrib-bigcsv",
+  "_id": "node-red-contrib-bigcsv@0.0.1"
+}
