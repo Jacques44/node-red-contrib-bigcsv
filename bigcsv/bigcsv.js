@@ -21,7 +21,7 @@
  
    #1 can handle big data
    #2 send start/end messages
-   #3 tell what they are doing
+   #3 visually tell what they are doing
 
    Any issues? https://github.com/Jacques44
  
@@ -61,6 +61,10 @@ module.exports = function(RED) {
       return;
     }
 
+    var function = ready() {
+      node.status({fill: "blue", shape: "dot", text: "ready !"});
+    }
+
     // Principe #2, end message on output #2
     var on_finish = function(err) {
 
@@ -90,14 +94,29 @@ module.exports = function(RED) {
       node.send([undefined, { control: runtime_control }]);    
     }
 
+    var out_stream = function() {
+      // 2. Sender
+      var outstream = new stream.Transform({ objectMode: true });
+      outstream._transform = function(data, encoding, done) {
+
+        // #3 big node principle: tell me what you are doing, so far
+        if (++runtime_control.records % runtime_control.config.checkpoint == 0) node.status({fill: "blue", shape: "dot", text: "sending... " + runtime_control.records + " records so far"});
+
+        // #1 big node principle: send blocks for big files management
+        node.send([{ payload: data }]);
+
+        done();
+      }      
+      return outstream;
+    }
+
     var d;
 
     // control is an incoming control message { control: {}, config: {} }
-    var create_stream = function(msg) {
+    var create_stream = function(msg, pipe) {
 
       var my_config = (msg || {}).config || def_config;
-      if (! my_config.columns) my_config.columns = true;
-
+      
       // Error management using domain
       d = domain.create();
       d.on('error', function(err) {     
@@ -105,46 +124,13 @@ module.exports = function(RED) {
         node.error(err);
       });
 
-
       var entry;
 
       // Everything linked together with error management
       // Cf documentation
       // Run the supplied function in the context of the domain, implicitly binding all event emitters, timers, and lowlevel requests that are created in that context
       d.run(function() {   
-
-        // Streams are created in the scope of domain (very very important)
-
-        // 1. Parser
-        var p = csv.parse(my_config);
-
-        // 2. Sender
-        var outstream = new stream.Transform({ objectMode: true });
-        outstream._transform = function(data, encoding, done) {
-
-          // #3 big node principle: tell me what you are doing, so far
-          if (++runtime_control.records % runtime_control.config.checkpoint == 0) node.status({fill: "blue", shape: "dot", text: "sending... " + runtime_control.records + " records so far"});
-
-          // #1 big node principle: send blocks for big files management
-          node.send([{ payload: data }]);
-
-          done();
-        }
-
-        if (my_config.is_filename) {
-
-          (entry = fs.createReadStream(msg.payload || msg.filename, my_config))
-          .pipe(p)
-          .pipe(outstream)
-          .on('finish', on_finish);               
-
-        } else {
-     
-          (entry = p)
-          .pipe(outstream)
-          .on('finish', on_finish);               
-        }
-
+        entry = pipe(my_config);
       });
 
       // Big node status and statistics
@@ -154,13 +140,55 @@ module.exports = function(RED) {
       return entry;
     }
 
+    // Specific for this node
+
+    var has_data = function(msg) {
+      return msg.payload || msg.filename;
+    }
+
+    var pipes = function(my_config) {
+
+      // Streams are created in the scope of domain (very very important)
+      var size_stream = new stream.Transform({ objectMode: true });
+      size_stream._transform = function(data, encoding, done) {
+        runtime_control.size += data.length;
+        this.push(data);
+        done();
+      }
+
+      if (! my_config.columns) my_config.columns = true;
+
+      if (config.is_filename) {
+
+        console.log("Opening file " + my_config.filename);
+
+        (entry = fs.createReadStream(my_config.filename, my_config))
+        .pipe(csv.parse(my_config))
+        .pipe(out_stream())
+        .on('finish', on_finish);               
+
+      } else {
+   
+        (entry = size_stream)
+        .pipe(csv.parse(my_config))
+        .pipe(out_stream())
+        .on('finish', on_finish);               
+      }
+
+      return entry;
+
+    }
+
     // Payload message is a file name?
     if (config.is_filename) {
 
       // Foreach file name
       this.on('input', function(msg) {
 
-        create_stream(msg);
+        if (!msg.config) msg.config = {};
+        msg.config.filename = msg.config.filename || msg.payload || msg.filename;
+
+        create_stream(msg, pipes);
 
       })
       
@@ -174,15 +202,13 @@ module.exports = function(RED) {
         if (msg.control && msg.control.state == "start") {
           input_stream = close_stream(input_stream);
 
-          node.status({fill: "blue", shape: "dot", text: "ready !"});
+          ready();
 
-          if (msg.config) input_stream = create_stream(msg);
+          if (msg.config) input_stream = create_stream(msg, pipes);
         }
 
-        if (msg.payload) {
-          if (! input_stream) input_stream = create_stream(msg);
-          
-          runtime_control.size += msg.payload.length;
+        if (has_data(msg)) {
+          if (! input_stream) input_stream = create_stream(msg, pipes);
 
           input_stream.write(msg.payload);
         }
