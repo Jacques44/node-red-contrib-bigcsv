@@ -38,8 +38,8 @@ module.exports = function(RED) {
 
   function BigCSV(config) {
 
-    config.checkpoint = 100;
-    config.columns = config.columns || true;
+    config.checkpoint = 100;   
+    var parser_stream = csv.parse;    
     
     // CSV Parser parameters as described in http://csv.adaltas.com/parse/
     var def_config = config;
@@ -47,8 +47,13 @@ module.exports = function(RED) {
     RED.nodes.createNode(this, config);
     var node = this;
 
+
+    /*********************************************/
+
+    var running = false;
+
     var runtime_control = {
-      config: def_config
+      config: Object.create(def_config)
     }
     delete runtime_control.config.wires;
     delete runtime_control.config.x;
@@ -61,7 +66,7 @@ module.exports = function(RED) {
       return;
     }
 
-    var function = ready() {
+    var ready = function() {
       node.status({fill: "blue", shape: "dot", text: "ready !"});
     }
 
@@ -80,6 +85,10 @@ module.exports = function(RED) {
       }
 
       node.send([undefined, { control: runtime_control }]);
+
+      running = false;
+
+      if (err) node.error(err);
     }
 
     var on_start = function(config, control) {
@@ -91,10 +100,12 @@ module.exports = function(RED) {
       delete runtime_control.end;
       runtime_control.state = "start";      
 
-      node.send([undefined, { control: runtime_control }]);    
+      node.send([undefined, { control: runtime_control }]);   
+
+      running = true; 
     }
 
-    var out_stream = function() {
+    var out_stream = function(my_config) {
       // 2. Sender
       var outstream = new stream.Transform({ objectMode: true });
       outstream._transform = function(data, encoding, done) {
@@ -113,31 +124,29 @@ module.exports = function(RED) {
     var d;
 
     // control is an incoming control message { control: {}, config: {} }
-    var create_stream = function(msg, pipe) {
+    var create_stream = function(msg, in_stream, last) {
 
       var my_config = (msg || {}).config || def_config;
-      
+
+      var input;
+      var output;
+
       // Error management using domain
-      d = domain.create();
-      d.on('error', function(err) {     
-        on_finish(err);
-        node.error(err);
-      });
-
-      var entry;
-
       // Everything linked together with error management
       // Cf documentation
       // Run the supplied function in the context of the domain, implicitly binding all event emitters, timers, and lowlevel requests that are created in that context
-      d.run(function() {   
-        entry = pipe(my_config);
+      domain.create().on('error', on_finish).run(function() {
+        (output = (input = in_stream(my_config))
+        .pipe(parser_stream(my_config))
+        .pipe(out_stream(my_config))
+        .on('finish', on_finish))
       });
 
       // Big node status and statistics
       on_start(my_config, msg.control);
 
       // Return is the entry point for incoming data
-      return entry;
+      return { input: input, output: output };
     }
 
     // Specific for this node
@@ -146,69 +155,63 @@ module.exports = function(RED) {
       return msg.payload || msg.filename;
     }
 
-    var pipes = function(my_config) {
-
+    var size_stream = function() {
       // Streams are created in the scope of domain (very very important)
       var size_stream = new stream.Transform({ objectMode: true });
       size_stream._transform = function(data, encoding, done) {
         runtime_control.size += data.length;
         this.push(data);
         done();
-      }
-
-      if (! my_config.columns) my_config.columns = true;
-
-      if (config.is_filename) {
-
-        console.log("Opening file " + my_config.filename);
-
-        (entry = fs.createReadStream(my_config.filename, my_config))
-        .pipe(csv.parse(my_config))
-        .pipe(out_stream())
-        .on('finish', on_finish);               
-
-      } else {
-   
-        (entry = size_stream)
-        .pipe(csv.parse(my_config))
-        .pipe(out_stream())
-        .on('finish', on_finish);               
-      }
-
-      return entry;
-
+      }      
+      return size_stream;
     }
 
-    // Payload message is a file name?
-    if (config.is_filename) {
+    var fs_stream = function(my_config) {
+      return fs.createReadStream(my_config.filename, my_config);
+    }    
 
-      // Foreach file name
-      this.on('input', function(msg) {
+    var file_stream = function() {
 
-        if (!msg.config) msg.config = {};
-        msg.config.filename = msg.config.filename || msg.payload || msg.filename;
+      var stack = [];
 
-        create_stream(msg, pipes);
+      return function(msg) {
 
-      })
-      
-    } else {      
+        var next = function() {
+          var msg = stack.pop();
+          if (msg) create(msg);
+        }
+
+        var create = function(msg) {
+          create_stream(msg, fs_stream, true).output.on('finish', next);
+        }
+
+        if (running) { 
+          stack.push(msg);
+        } else {
+          create(msg);
+        }
+      }   
+
+    }();
+
+    var data_stream = function() {
 
       var input_stream;
 
-      // If any new message...
-      this.on('input', function(msg) {
+      return function(msg) {
+
+        var my_stream = size_stream;
 
         if (msg.control && msg.control.state == "start") {
           input_stream = close_stream(input_stream);
 
           ready();
 
-          if (msg.config) input_stream = create_stream(msg, pipes);
+          if (msg.config) input_stream = create_stream(msg, my_stream).input;
         }
 
         if (has_data(msg)) {
-          if (! input_stream) input_stream = create_stream(msg, pipes);
+          if (! input_stream) input_stream = create_stream(msg, my_stream).input;
 
           input_stream.write(msg.payload);
         }
@@ -217,11 +220,37 @@ module.exports = function(RED) {
           runtime_control.control = msg.control;    // Parent control message
 
           input_stream = close_stream(input_stream);
-        }
-       
-      })
+        }  
+      };
 
+    }();
+
+    /****************************************************************/    
+
+    var validate_config = function(config) {
+      config.columns = config.columns || true;
+      config.checkpoint = 100;
+      return config;
     }
+    validate_config(def_config);
+
+    this.on('input', function(msg) {
+
+      if (config.is_filename) {
+
+        if (! msg.config) msg.config = Object.create(def_config);      
+        msg.config.filename = msg.config.filename || msg.payload || msg.filename;
+
+        validate_config(msg.config);
+
+        file_stream(msg);
+      
+      } else {
+
+        data_stream(msg);
+      
+      }
+    });
 
   }
 
