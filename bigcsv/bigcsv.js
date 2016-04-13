@@ -49,8 +49,6 @@ module.exports = function(RED) {
       // if no configuration available from the incoming message, a new one is returned, cloned from default
       msg.config = bignode.new_config(msg.config); 
 
-      console.log(msg.config);
-
       msg.config.filename = msg.config.filename || msg.filename;
       msg.config.columns = msg.config.columns || true;
 
