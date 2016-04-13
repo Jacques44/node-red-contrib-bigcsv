@@ -23,6 +23,10 @@
     <label for="node-input-name"><i class="icon-tag"></i> Name</label>
     <input type="text" id="node-input-name" >
   </div>
+  <div class="form-row">
+       <label for="node-input-filename"><i class="fa fa-file"></i> <span data-i18n="bigfile.label.filename"></span></label>
+       <input type="text" id="node-input-filename" data-i18n="[placeholder]bigfile.label.filename">
+  </div>  
   <div>
     <label>
       <input type="checkbox" id="node-input-is_filename" > Payload is a file name
@@ -38,7 +42,9 @@
         color: '#cc0044',
         defaults: {               // defines the editable properties of the node
             name: {value:""},     //  along with default values.
-            is_filename: {valeur: false}
+            is_filename: {valeur: false},
+            filename: {value:""},
+            format: {value:"blocks"},
         },
 
         inputs:1,               // set the number of inputs - only 0 or 1

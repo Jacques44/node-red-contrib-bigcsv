@@ -29,48 +29,38 @@
 
 */
 
-var csv = require('csv');
-var biglib = require('node-red-biglib');
-
 module.exports = function(RED) {
+
+  var csv = require('csv');
+  var biglib = require('node-red-biglib');
 
   function BigCSV(config) {
 
-    // 1. config is coming from RED with user wishes
-    // 2. config is validated through biglib
-    // 3. config has a local validation function
-    var validate_config = function(config) {
-      config.columns = config.columns || true;
-      return config;
-    }
-
-    // bigcsv validations
-    validate_config(config);
+    RED.nodes.createNode(this, config);    
 
     // new instance of biglib for this configuration
-    var bignode = new biglib({ config: config, parser: csv.parse, node: this });
+    var bignode = new biglib({ config: config, parser: csv.parse, node: this, status: 'records' });
 
     // biglib changes the configuration to add some properties
     config = bignode.config();
 
-    RED.nodes.createNode(this, config);
-
     this.on('input', function(msg) {
 
-      if (config.is_filename) {
+      // if no configuration available from the incoming message, a new one is returned, cloned from default
+      msg.config = bignode.new_config(msg.config); 
 
-        // if no configuration available from the incoming message, a new one is returned, cloned from default
-        msg.config = bignode.new_config(msg.config);  
-        msg.config.filename = msg.config.filename || msg.payload || msg.filename;
+      console.log(msg.config);
 
-        // bigcsv validations
-        validate_config(msg.config);
+      msg.config.filename = msg.config.filename || msg.filename;
+      msg.config.columns = msg.config.columns || true;
 
-        bignode.file_stream(msg);
+      if (msg.config.filename) {
+
+        bignode.stream_file_blocks(msg);
       
       } else {
 
-        bignode.data_stream(msg);
+        bignode.stream_data_blocks(msg);
       
       }
     });
