@@ -26,11 +26,6 @@
   <div class="form-row">
        <label for="node-input-filename"><i class="fa fa-file"></i> <span data-i18n="bigfile.label.filename"></span></label>
        <input type="text" id="node-input-filename" data-i18n="[placeholder]bigfile.label.filename">
-  </div>  
-  <div>
-    <label>
-      <input type="checkbox" id="node-input-is_filename" > Payload is a file name
-    </label>
   </div>    
  </script>
 
@@ -40,11 +35,10 @@
     RED.nodes.registerType('bigcsv',{
         category: 'function',      // the palette category
         color: '#cc0044',
+        
         defaults: {               // defines the editable properties of the node
             name: {value:""},     //  along with default values.
-            is_filename: {valeur: false},
-            filename: {value:""},
-            format: {value:"blocks"},
+            filename: {value:""}
         },
 
         inputs:1,               // set the number of inputs - only 0 or 1

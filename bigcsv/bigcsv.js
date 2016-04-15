@@ -31,8 +31,8 @@
 
 module.exports = function(RED) {
 
-  var csv = require('csv');
   var biglib = require('node-red-biglib');
+  var csv = require('csv');
 
   function BigCSV(config) {
 
