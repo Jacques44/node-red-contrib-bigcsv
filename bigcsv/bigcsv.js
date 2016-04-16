@@ -38,30 +38,20 @@ module.exports = function(RED) {
 
     RED.nodes.createNode(this, config);    
 
-    // new instance of biglib for this configuration
-    var bignode = new biglib({ config: config, parser: csv.parse, node: this, status: 'records' });
+    // Options the parser will understand
+    // See http://csv.adaltas.com/parse/
+    var csv_config = {
+      "columns": { default: true, validation: function(v) { return v || true } }, 
+      "delimiter": undefined, "rowDelimiter": undefined,
+      "quote": undefined, "escape": undefined, "comment": undefined, "relax": undefined, "skip_empty_lines": undefined,
+      "trim": undefined, "ltrim": undefined, "rtrim": undefined, "auto_parse": undefined, "auto_parse_date": undefined 
+    }
+    var bignode = new biglib({ config: config, parser: csv.parse, parser_config: csv_config, node: this, status: 'records' });
 
     // biglib changes the configuration to add some properties
     config = bignode.config();
 
-    this.on('input', function(msg) {
-
-      // if no configuration available from the incoming message, a new one is returned, cloned from default
-      msg.config = bignode.new_config(msg.config); 
-
-      msg.config.filename = msg.config.filename || msg.filename;
-      msg.config.columns = msg.config.columns || true;
-
-      if (msg.config.filename) {
-
-        bignode.stream_file_blocks(msg);
-      
-      } else {
-
-        bignode.stream_data_blocks(msg);
-      
-      }
-    });
+    this.on('input', bignode.main.bind(bignode));
 
   }
 
