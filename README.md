@@ -11,8 +11,6 @@
 ## Installation
 ```bash
 npm install node-red-contrib-bigcsv
-cd node-red-contrib-bigcsv
-npm install
 ```
 
 ## Principles for Big Nodes
