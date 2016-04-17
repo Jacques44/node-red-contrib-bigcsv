@@ -20,8 +20,8 @@
    Big Nodes principles:
  
    #1 can handle big data
-   #2 send start/end messages
-   #3 visually tell what they are doing
+   #2 send status messages on a second output (start, end, running, error)
+   #3 visually tell what they are doing (blue: ready/running, green: ok/done, error)
 
    Any issues? https://github.com/Jacques44
  
