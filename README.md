@@ -53,9 +53,9 @@ It has several options as csv-parse offers them: (see http://csv.adaltas.com/par
 
 ## Dependencies
 
-	[csv-parse](https://www.npmjs.com/package/csv-parse) CSV parsing implementing the Node.js stream.Transform API
+[csv-parse](https://www.npmjs.com/package/csv-parse) CSV parsing implementing the Node.js stream.Transform API
 
-	[biglib](https://www.npmjs.com/package/node-red-biglib) library for building node-red flows that supports blocks, high volume
+[biglib](https://www.npmjs.com/package/node-red-biglib) library for building node-red flows that supports blocks, high volume
 
 ## Example flow files
 
