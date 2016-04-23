@@ -46,7 +46,7 @@ module.exports = function(RED) {
       "quote": undefined, "escape": undefined, "comment": undefined, "relax": undefined, "skip_empty_lines": undefined,
       "trim": undefined, "ltrim": undefined, "rtrim": undefined, "auto_parse": undefined, "auto_parse_date": undefined 
     }
-    var bignode = new biglib({ config: config, parser: csv.parse, parser_config: csv_config, node: this, status: 'records' });
+    var bignode = new biglib({ config: config, parser: csv.parse, parser_config: csv_config, node: this, status: 'records', generator: 'filename' });
 
     // biglib changes the configuration to add some properties
     config = bignode.config();
