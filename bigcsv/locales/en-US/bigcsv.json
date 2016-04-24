@@ -1,0 +1,9 @@
+{
+    "bigcsv": {
+        "label": {
+        	"nodelabel": "Big CSV",
+            "filename": "Filename",
+            "name": "Name"
+        }
+    }
+}

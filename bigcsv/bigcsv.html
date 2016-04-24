@@ -19,14 +19,17 @@
 
 <!-- First, the content of the edit dialog is defined.                       -->
 <script type="text/x-red" data-template-name="bigcsv">
+
   <div class="form-row">
-    <label for="node-input-name"><i class="icon-tag"></i> Name</label>
-    <input type="text" id="node-input-name" >
-  </div>
-  <div class="form-row">
-       <label for="node-input-filename"><i class="fa fa-file"></i> <span data-i18n="bigfile.label.filename"></span></label>
-       <input type="text" id="node-input-filename" data-i18n="[placeholder]bigfile.label.filename">
+       <label for="node-input-filename"><i class="fa fa-file"></i> <span data-i18n="bigcsv.label.filename"></span></label>
+       <input type="text" id="node-input-filename" data-i18n="[placeholder]bigcsv.label.filename">
   </div>    
+
+   <div class="form-row">
+      <label for="node-input-name"><i class="fa fa-tag"></i> <span data-i18n="bigcsv.label.name"></span></label>
+      <input type="text" id="node-input-name" data-i18n="[placeholder]bigcsv.label.name">
+  </div>
+
  </script>
 
 
@@ -47,17 +50,17 @@
         // set the icon (held in icons dir below where you save the node)
         icon: "arrow-in.png",      // saved in  icons/myicon.png
 
-        label: function() {     // sets the default label contents
-            return this.name||"Big CSV";
+        label: function() {
+            return this.name||this.filename||this._("bigcsv.label.nodelabel");
         },
-        
-        labelStyle: function() { // sets the class to apply to the label
+        labelStyle: function() {
             return this.name?"node_label_italic":"";
-        },
+        }
 
     });
 </script>
 
 <script type="text/x-red" data-help-name="bigcsv">
-
+  <p>Big CSV is a <code>big node</code>. It inherits from the power of the <a href="https://github.com/Jacques44/node-red-biglib/wiki">big lib</a>. It is able to act as a classical filter using the state of the art <a href="https://github.com/wdavidw/node-csv-generate">csv</a> package. It is also able to read a file and parse several blocks sent by a <code>big file</code> or other <code>big node</code>. It has two outputs, one for data and one for control messages (i.e. start/stop/running/error).</p>
+  <p>It shows its status with a circle (when acting as a filter) or with a dot (when acting as data generator). This element is <code>blue</code> when the node is ready, <code>green</code> when the job is finished or <code>red</code> when something was wrong.</p>
 </script>
