@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-bigcsv",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "A Big CSV parser",
   "dependencies": {
     "csv": "^0.4.6",
@@ -23,5 +23,5 @@
     "url": "https://github.com/Jacques44/node-red-contrib-bigcsv/issues"
   },
   "homepage": "https://github.com/Jacques44/node-red-contrib-bigcsv",
-  "_id": "node-red-contrib-bigcsv@1.0.2"
+  "_id": "node-red-contrib-bigcsv@1.1.0"
 }
