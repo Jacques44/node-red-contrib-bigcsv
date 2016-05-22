@@ -11,7 +11,7 @@
 npm install node-red-contrib-bigcsv
 ```
 
-Known issue: work with node 
+Known issue: work with node v4
 
 Core provides a CSV parser. This one is able to parse multi-line.
 
