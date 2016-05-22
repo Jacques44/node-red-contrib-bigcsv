@@ -2,30 +2,33 @@
 
 "CSV" parser for node-red. Original work by IBM dosnt' fit my needs. Buggy with multi-line and no huge file support. Here is a version working with a state for the art library (csv-parse) and working with my bigfile library
 
-![alt tag](https://cloud.githubusercontent.com/assets/18165555/14587338/e2939d76-04b1-11e6-8f70-58620128fda8.png)
+![alt tag](https://cloud.githubusercontent.com/assets/18165555/15456092/888aa0c4-2066-11e6-8224-4ec7fc8919f7.png)
 
-![alt tag](https://cloud.githubusercontent.com/assets/18165555/14587341/e5964910-04b1-11e6-8797-b70a6d12504e.png)
-
-![alt tag](https://cloud.githubusercontent.com/assets/18165555/14587342/e79a420c-04b1-11e6-80fb-a3f4b33fa13d.png)
+![alt tag](https://cloud.githubusercontent.com/assets/18165555/15456091/859c4570-2066-11e6-810d-ec72797ac7ea.png)
 
 ## Installation
 ```bash
 npm install node-red-contrib-bigcsv
 ```
 
+Known issue: work with node 
+
+Core provides a CSV parser. This one is able to parse multi-line.
+
 ## Principles for Big Nodes
- 
-###1 can handle big data or block mode
 
-  That means, in block mode, not only "one message is a whole file" and able to manage start/end control messages
+See [biglib](https://www.npmjs.com/package/node-red-biglib) for details on Big Nodes.
+`Big Lib` and subsequent `Big Nodes` are a family of nodes built for my own purpose. They are all designed to help me build a complete process for **production purposes**. For that I needed nodes able to:
 
-###2 send start/end messages as well as statuses
+* Flow **big volume** of data (memory control, work with buffers)
+* Work with *a flow of blocks* (buffers) (multiple payload within a single job)
+* Tell what *they are doing* with extended use of statuses (color/message)
+* Use their *second output for flow control* (start/stop/running/status)
+* *Reuse messages* in order to propagate _msgid, topic
+* Depends on **state of the art** libraries for parsing (csv, xml, xlsxs, line, ...)
+* Acts as **filters by default** (1 payload = 1 action) or **data generators** (block flow)
 
-  That means it uses a second output to give control states (start/end/running and error) control messages
-
-###3 tell visually what they are doing
-
-  Visual status on the node tells it's ready/running (blue), all is ok and done (green) or in error (red)
+All functionnalities are built under a library named `biglib` and all `Big Nodes` rely on it
 
 ## Usages
 
@@ -60,10 +63,10 @@ It has several options as csv-parse offers them: (see http://csv.adaltas.com/par
 Try pasting in the flow file below that shows the node behaviour 
 
 ```json
-[{"id":"5c793499.a386cc","type":"bigcsv","z":"cf60aefe.309f5","name":"","filename":"","x":337.5,"y":550,"wires":[[],[]]},{"id":"b0b0578.f4f4fa8","type":"comment","z":"cf60aefe.309f5","name":"Big CSV node sample usage","info":"","x":144,"y":31,"wires":[]},{"id":"da2bdbe4.25d428","type":"inject","z":"cf60aefe.309f5","name":"GO","topic":"","payload":"","payloadType":"str","repeat":"","crontab":"","once":false,"x":404.5,"y":92,"wires":[["83837399.7c7c9"]]},{"id":"83837399.7c7c9","type":"function","z":"cf60aefe.309f5","name":"sample data","func":"msg.control = { state: \"standalone\" }\nmsg.payload = \"Col1,Col2,Col3\\nVal1,\\\"Val\\\"\\\"3\\\"\\\"\\\",Val3\\nThis,is a,\\\"multi\\nline\\\"\\n1,2,2016-01-02\"\nreturn msg;","outputs":1,"noerr":0,"x":564.5,"y":190,"wires":[["d5028068.2afd8"]]},{"id":"c0204178.3fdfc","type":"debug","z":"cf60aefe.309f5","name":"csv object","active":true,"console":"false","complete":"payload","x":866,"y":214,"wires":[]},{"id":"7573e4df.8a8c1c","type":"debug","z":"cf60aefe.309f5","name":"status","active":true,"console":"false","complete":"control","x":854,"y":308,"wires":[]},{"id":"1e457465.e1ba8c","type":"inject","z":"cf60aefe.309f5","name":"GO with parsing","topic":"","payload":"","payloadType":"str","repeat":"","crontab":"","once":false,"x":130,"y":239,"wires":[["236dd58b.dc922a"]]},{"id":"fff60e88.0009f","type":"inject","z":"cf60aefe.309f5","name":"GO with no parsing","topic":"","payload":"","payloadType":"str","repeat":"","crontab":"","once":false,"x":139,"y":337,"wires":[["4807b771.b7f848"]]},{"id":"4807b771.b7f848","type":"function","z":"cf60aefe.309f5","name":"auto_parse=false","func":"msg.config = { auto_parse: false }\nreturn msg;","outputs":1,"noerr":0,"x":340,"y":283,"wires":[["83837399.7c7c9"]]},{"id":"236dd58b.dc922a","type":"function","z":"cf60aefe.309f5","name":"auto_parse=true","func":"msg.config = { auto_parse: true, auto_parse_date: true }\nreturn msg;","outputs":1,"noerr":0,"x":332,"y":190,"wires":[["83837399.7c7c9"]]},{"id":"1aa72d7d.e558d3","type":"comment","z":"cf60aefe.309f5","name":"This node accepts on the fly configuration","info":"","x":183.5,"y":154,"wires":[]},{"id":"278170bb.d87e9","type":"comment","z":"cf60aefe.309f5","name":"3 lines of data with 1 multi line","info":"","x":614,"y":153,"wires":[]},{"id":"46c3865c.b93c78","type":"comment","z":"cf60aefe.309f5","name":"control messages (start, stop, ...)","info":"","x":903,"y":351,"wires":[]},{"id":"c4a81b53.3b57e8","type":"comment","z":"cf60aefe.309f5","name":"One message per line","info":"","x":872,"y":257,"wires":[]},{"id":"83a730d6.7c58d","type":"comment","z":"cf60aefe.309f5","name":"Simple trigger","info":"","x":449,"y":54,"wires":[]},{"id":"71dc7730.8e2388","type":"inject","z":"cf60aefe.309f5","name":"GO with an error","topic":"","payload":"","payloadType":"str","repeat":"","crontab":"","once":false,"x":128,"y":431,"wires":[["38c0fe3c.c73f02"]]},{"id":"38c0fe3c.c73f02","type":"function","z":"cf60aefe.309f5","name":"Non existing file","func":"msg.payload = \"/A/Probably/Non/Existing/File\"\nreturn msg;","outputs":1,"noerr":0,"x":369,"y":431,"wires":[["d5028068.2afd8"]]},{"id":"d5028068.2afd8","type":"bigcsv","z":"cf60aefe.309f5","name":"","filename":"","x":634.5,"y":380,"wires":[["c0204178.3fdfc"],["7573e4df.8a8c1c"]]},{"id":"38e69bd0.c71964","type":"comment","z":"cf60aefe.309f5","name":"See the numbers...","info":"","x":365,"y":226,"wires":[]}]
+[{"id":"9c1f18d5.63e0e8","type":"comment","z":"b4b0c2a3.4b4f4","name":"Big CSV node sample usage","info":"","x":146.5,"y":41,"wires":[]},{"id":"d3cf8795.2c3078","type":"inject","z":"b4b0c2a3.4b4f4","name":"GO","topic":"","payload":"","payloadType":"str","repeat":"","crontab":"","once":false,"x":410,"y":100,"wires":[["c7e57a1f.381a88"]]},{"id":"c7e57a1f.381a88","type":"function","z":"b4b0c2a3.4b4f4","name":"sample data","func":"msg.payload = \"Col1,Col2,Col3\\nVal1,\\\"Val\\\"\\\"3\\\"\\\"\\\",Val3\\nThis,is a,\\\"multi\\nline\\\"\\n1,2,2016-01-02\"\nreturn msg;","outputs":1,"noerr":0,"x":590,"y":200,"wires":[["819bdae5.7e6428"]]},{"id":"bcabd332.43543","type":"debug","z":"b4b0c2a3.4b4f4","name":"csv object","active":true,"console":"false","complete":"payload","x":970,"y":260,"wires":[]},{"id":"a780465.f587fb8","type":"debug","z":"b4b0c2a3.4b4f4","name":"status","active":true,"console":"false","complete":"control","x":950,"y":360,"wires":[]},{"id":"83781490.7c87e8","type":"inject","z":"b4b0c2a3.4b4f4","name":"GO with parsing","topic":"","payload":"","payloadType":"str","repeat":"","crontab":"","once":false,"x":140,"y":240,"wires":[["279f5508.d860aa"]]},{"id":"5071718b.af8e9","type":"inject","z":"b4b0c2a3.4b4f4","name":"GO with no parsing","topic":"","payload":"","payloadType":"str","repeat":"","crontab":"","once":false,"x":150,"y":340,"wires":[["9ab9cd9c.65463"]]},{"id":"9ab9cd9c.65463","type":"function","z":"b4b0c2a3.4b4f4","name":"auto_parse=false","func":"msg.config = { auto_parse: false }\nreturn msg;","outputs":1,"noerr":0,"x":370,"y":300,"wires":[["c7e57a1f.381a88"]]},{"id":"279f5508.d860aa","type":"function","z":"b4b0c2a3.4b4f4","name":"auto_parse=true","func":"msg.config = { auto_parse: true, auto_parse_date: true }\nreturn msg;","outputs":1,"noerr":0,"x":334.5,"y":200,"wires":[["c7e57a1f.381a88"]]},{"id":"aae3d444.551c28","type":"comment","z":"b4b0c2a3.4b4f4","name":"This node accepts on the fly configuration","info":"","x":186,"y":164,"wires":[]},{"id":"8a707fdb.758f8","type":"comment","z":"b4b0c2a3.4b4f4","name":"3 lines of data with 1 multi line","info":"","x":640,"y":160,"wires":[]},{"id":"4b231890.b4dce8","type":"comment","z":"b4b0c2a3.4b4f4","name":"control messages (start, stop, ...)","info":"","x":1030,"y":400,"wires":[]},{"id":"1205b30.fedfa4d","type":"comment","z":"b4b0c2a3.4b4f4","name":"One message per line","info":"","x":1000,"y":220,"wires":[]},{"id":"506c748b.af938c","type":"comment","z":"b4b0c2a3.4b4f4","name":"Simple trigger","info":"","x":430,"y":60,"wires":[]},{"id":"16b73073.e948d","type":"inject","z":"b4b0c2a3.4b4f4","name":"GO with an error","topic":"","payload":"","payloadType":"str","repeat":"","crontab":"","once":false,"x":140,"y":400,"wires":[["e2c2d0e9.1d3d3"]]},{"id":"e2c2d0e9.1d3d3","type":"function","z":"b4b0c2a3.4b4f4","name":"Non existing file","func":"msg.filename = \"/A/Probably/Non/Existing/File\"\nreturn msg;","outputs":1,"noerr":0,"x":580,"y":400,"wires":[["819bdae5.7e6428"]]},{"id":"819bdae5.7e6428","type":"bigcsv","z":"b4b0c2a3.4b4f4","name":"","filename":"","x":780,"y":300,"wires":[["bcabd332.43543"],["a780465.f587fb8"]]},{"id":"50fc0dc5.af03f4","type":"comment","z":"b4b0c2a3.4b4f4","name":"See the numbers...","info":"","x":367.5,"y":236,"wires":[]}]
 ```
 
-![alt tag](https://cloud.githubusercontent.com/assets/18165555/14587343/ed9e67c8-04b1-11e6-9da5-600e1cda44b7.png)
+![alt tag](https://cloud.githubusercontent.com/assets/18165555/15456089/814f384c-2066-11e6-9542-7fa04b409aca.png)
 
 ## Author
 
